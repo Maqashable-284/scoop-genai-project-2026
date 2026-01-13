@@ -359,6 +359,20 @@ class ConversationStore:
         bson_history = []
 
         for content in history:
+            # WEEK 2 FIX: Handle dict format from get_history()
+            if isinstance(content, dict):
+                # Already in dict format, just ensure it's native Python
+                entry = {
+                    "role": content.get("role", "user"),
+                    "parts": content.get("parts", [])
+                }
+                # Convert any nested protobuf objects
+                entry["parts"] = proto_to_native(entry["parts"])
+                if entry["parts"]:  # Only add if there are parts
+                    bson_history.append(entry)
+                continue
+            
+            # Original logic for Content objects
             # Determine role from content type (new SDK) or role attribute (old SDK)
             if hasattr(content, 'role'):
                 role = content.role
