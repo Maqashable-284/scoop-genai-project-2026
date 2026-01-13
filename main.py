@@ -75,6 +75,7 @@ from app.memory.mongo_store import (
     ConversationStore,
     UserStore,
 )
+from app.memory.summarizer import ConversationSummarizer  # Week 3: LLM summarization
 from app.catalog.loader import CatalogLoader
 from app.tools.user_tools import (
     get_user_profile,
@@ -148,6 +149,15 @@ SAFETY_SETTINGS = [
 
 # Generation config - now part of GenerateContentConfig in new SDK
 # Will be merged into chat config when creating sessions
+
+# Week 3: Initialize LLM summarizer for better context retention
+# Uses gemini-2.5-flash for fast, cost-effective summarization
+conversation_summarizer = ConversationSummarizer(
+    client=gemini_client,
+    model_name="gemini-2.5-flash",  # Fast model for summarization
+    max_tokens=300,  # Keep summaries concise
+    temperature=0.3,  # Lower temp for consistent summaries
+)
 
 
 # =============================================================================
@@ -472,9 +482,12 @@ class SessionManager:
 # GLOBAL INSTANCES
 # =============================================================================
 
+# Week 3: Pass LLM summarizer to ConversationStore
+# The summarizer is optional - if None, fallback to keyword-based summary
 conversation_store = ConversationStore(
     max_messages=settings.max_history_messages,
-    max_tokens=settings.max_history_tokens
+    max_tokens=settings.max_history_tokens,
+    summarizer=conversation_summarizer,  # Week 3: LLM-based summarization
 )
 user_store = UserStore()
 catalog_loader: Optional[CatalogLoader] = None

@@ -1,25 +1,35 @@
-# 🚀 Scoop GenAI: SDK Migration Complete!
+# 🚀 Scoop GenAI: Memory Optimization Progress
 
-**Status**: Week 1 ✅ | Week 2-4 ✅ Migration Complete!
+**Status**: Week 1 ✅ | Week 2 ✅ | Week 3 ✅ | Week 4 🔜
 
 ---
 
-## 📋 Migration Summary
+## 📋 Progress Summary
 
-### What Was Done:
+### What's Done:
 ✅ **Week 1**: Summary injection fix + 30-day TTL (tested and working!)
-✅ **Week 2-4**: Migrated `google.generativeai` → `google.genai` SDK
+✅ **Week 2**: Migrated `google.generativeai` → `google.genai` SDK
+✅ **Week 3**: LLM-based conversation summarization (replaces keyword-based)
 
 ---
 
-## 📖 Migration Details
+## 📖 Implementation Details
 
+### Week 2: SDK Migration
 See full migration documentation: [docs/SDK_MIGRATION.md](docs/SDK_MIGRATION.md)
+
+### Week 3: LLM Summarization
+- Created `app/memory/summarizer.py` with `ConversationSummarizer` class
+- Uses Gemini to generate semantic summaries in Georgian
+- Extracts user preferences, allergies, product interests
+- Falls back to keyword-based summary on error
+- **Backwards compatible**: summarizer parameter is optional
 
 ### Key Changes:
 - Updated `requirements.txt` to use `google-genai>=1.0.0`
 - Migrated `main.py` to use new client-based API
-- Updated `app/memory/mongo_store.py` for new Content types
+- Updated `app/memory/mongo_store.py` for new Content types + LLM summarizer
+- Created `app/memory/summarizer.py` for LLM-based summarization
 - Preserved Week 1 summary injection fix
 
 ### Answers to Critical Questions:
@@ -71,14 +81,27 @@ curl -X POST http://localhost:8080/chat \
 
 ## 🧪 Testing Checklist
 
+### Core Functionality
 - [ ] Server starts without errors
 - [ ] `/health` returns healthy
 - [ ] `/chat` processes messages
 - [ ] `/chat/stream` streams correctly
 - [ ] Function calling works
+
+### Week 1: Summary Injection
 - [ ] History persists to MongoDB
-- [ ] Summary injection works
+- [ ] Summary injection works on session reload
+- [ ] 30-day TTL set on summaries
+
+### Week 3: LLM Summarization
+- [ ] LLM summarizer generates Georgian summaries
+- [ ] Fallback to keyword-based works when LLM fails
+- [ ] Summary includes user preferences/allergies
 
 ---
 
-**Migration Complete! 🎉**
+**Week 3 Complete! 🎉**
+
+### Coming Up: Week 4
+- Context caching for cost reduction
+- Cache refresh background task

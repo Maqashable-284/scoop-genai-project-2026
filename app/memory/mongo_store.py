@@ -291,16 +291,32 @@ class ConversationStore:
     - Token-based pruning with summarization
     - Sliding window for very long conversations
     - Multi-session support (user can return after 2 days)
+
+    Week 3 Enhancement:
+    - Optional LLM summarizer for better context retention
+    - Falls back to keyword-based summary if summarizer unavailable
     """
 
-    def __init__(self, max_messages: int = 100, max_tokens: int = 50000):
+    def __init__(
+        self,
+        max_messages: int = 100,
+        max_tokens: int = 50000,
+        summarizer: Any = None,  # Optional ConversationSummarizer instance
+    ):
         """
         Args:
             max_messages: Trigger summarization when exceeded (sliding window)
             max_tokens: Estimated token limit before pruning
+            summarizer: Optional ConversationSummarizer for LLM-based summaries (Week 3)
         """
         self.max_messages = max_messages
         self.max_tokens = max_tokens
+        self.summarizer = summarizer  # Week 3: Optional LLM summarizer
+
+        if summarizer:
+            logger.info("ConversationStore initialized with LLM summarizer")
+        else:
+            logger.info("ConversationStore initialized with keyword-based summarizer (fallback)")
 
     @property
     def collection(self):
@@ -524,6 +540,10 @@ class ConversationStore:
         3. Context pruning: Remove less important messages
 
         Current strategy: Sliding window + Summary
+
+        Week 3 Enhancement:
+        - Uses LLM summarizer if available for better context retention
+        - Falls back to keyword-based summary on error or if summarizer unavailable
         """
         # Keep last 50 messages (25 exchanges)
         keep_count = 50
@@ -535,9 +555,26 @@ class ConversationStore:
         old_messages = history[:-keep_count]
         new_messages = history[-keep_count:]
 
-        # Generate summary of old messages
-        # In production, you might call Gemini to summarize
-        summary = self._generate_simple_summary(old_messages)
+        # Week 3: Try LLM summarization first, fallback to keyword-based
+        summary = None
+
+        if self.summarizer:
+            try:
+                logger.info(f"Attempting LLM summarization for {len(old_messages)} messages...")
+                summary = await self.summarizer.summarize(old_messages)
+
+                if summary:
+                    logger.info(f"✅ LLM summary generated: {summary[:100]}...")
+                else:
+                    logger.warning("LLM summarizer returned None, using fallback")
+            except Exception as e:
+                logger.error(f"LLM summarization failed: {e}, using fallback")
+                summary = None
+
+        # Fallback to simple keyword-based summary
+        if not summary:
+            summary = self._generate_simple_summary(old_messages)
+            logger.info(f"Using keyword-based summary: {summary}")
 
         logger.info(f"Pruned history: {len(old_messages)} messages summarized")
 
